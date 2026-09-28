@@ -1,0 +1,113 @@
+package org.snhu.cs320.contact;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.snhu.cs320.exception.ValidationException;
+
+public class ContactTest {
+
+    //tests creating entities
+    @Test
+    void testSuccessfulCreation() {
+        Contact contact = new Contact(
+            "1",
+            "First",
+            "Last",
+            "1111111111",
+            "1234 Numbers Lane"
+        );
+        assertThat(contact)
+            .hasFieldOrPropertyWithValue("id", "1")
+            .hasFieldOrPropertyWithValue("firstName", "First")
+            .hasFieldOrPropertyWithValue("lastName", "Last")
+            .hasFieldOrPropertyWithValue("phoneNumber", "1111111111")
+            .hasFieldOrPropertyWithValue("address", "1234 Numbers Lane");
+    }
+
+    //a csv of entries for testing purposes.
+    @CsvSource(
+        {
+            " ' ', First, Last, 1111111111, 1234 Numbers Lane", //blank ID
+            ", First, Last, 1111111111, 1234 Numbers Lane", //null ID
+            "12121212121, First, Last, 1111111111, 1234 Numbers Lane", //ID that is way too long
+            "1, '', Last, 1111111111, 1234 Numbers Lane", //blank Name
+            "1,, Last, 1111111111, 1234 Numbers Lane", //null Name
+            "1, FirstNameThatIsWayTooLong, Last, 1111111111, 1234 Numbers Lane", //Name that is way too long
+            "1, First, '', 1111111111, 1234 Numbers Lane",
+            "1, First,, 1111111111, 1234 Numbers Lane",
+            "1, First, LastNameThatIsWayTooLong, 1111111111, 1234 Numbers Lane",
+            "1, First, Last, 11111111111, 1234 Numbers Lane", //phone number too long
+            "1, First, Last, 1111111a1z, 1234 Numbers Lane", //phone number that contains letters
+            "1, First, Last, 111-111-1111, 1234 Numbers Lane", //phone number that has punctuation
+            "1, First, Last, 111 111 1111, 1234 Numbers Lane", //phone number with spaces
+            "1, First, Last, '', 1234 Numbers Lane", //blank phone number
+            "1, First, Last,, 1234 Numbers Lane", //null phone number
+            "1, First, Last, 1111111111, ''", //blank address
+            "1, First, Last, 1111111111,", //null address
+            "1, First, Last, 1111111111, 1234 Numbers and letters and way too many of them Lane", //address that is too long
+            "1, First, Last, 123456789, 1234 Numbers Lane", //new addition
+        }
+    )
+    //tests setting each of these invalid entries
+    @ParameterizedTest
+    void testFailedCreation(
+        String id,
+        String firstName,
+        String lastName,
+        String phoneNumber,
+        String address
+    ) {
+        assertThatThrownBy(() ->
+                new Contact(id, firstName, lastName, phoneNumber, address)
+            )
+            .isExactlyInstanceOf(ValidationException.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        {
+            "1, A, B, C",
+            "1234567890, ABCDEFGHIJ, KLMNOPQRST, 123456789012345678901234567890",
+        }
+    )
+    void testCreationAtLengthBoundaries(
+        String id,
+        String firstName,
+        String lastName,
+        String address
+    ) {
+        Contact contact = new Contact(
+            id,
+            firstName,
+            lastName,
+            "0123456789",
+            address
+        );
+
+        assertThat(contact.getId()).isEqualTo(id);
+        assertThat(contact.getFirstName()).isEqualTo(firstName);
+        assertThat(contact.getLastName()).isEqualTo(lastName);
+        assertThat(contact.getPhoneNumber()).isEqualTo("0123456789");
+        assertThat(contact.getAddress()).isEqualTo(address);
+    }
+
+    @Test
+    void testPreservesNonblankWhitespace() {
+        Contact contact = new Contact(
+            " 1 ",
+            " First ",
+            " Last ",
+            "1111111111",
+            " 123 Main St "
+        );
+
+        assertThat(contact.getId()).isEqualTo(" 1 ");
+        assertThat(contact.getFirstName()).isEqualTo(" First ");
+        assertThat(contact.getLastName()).isEqualTo(" Last ");
+        assertThat(contact.getAddress()).isEqualTo(" 123 Main St ");
+    }
+}
