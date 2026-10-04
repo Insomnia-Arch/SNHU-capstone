@@ -138,6 +138,16 @@ class ContactServiceTest {
 
         assertThat(service.getContact("1")).isSameAs(original);
         assertThat(service.getAllContacts()).containsExactly(original);
+
+        //verify that the rejected duplicate neither removes the original entries or creates entries for the rejected contact.
+        assertThat(service.searchByNamePrefix("fir")).containsExactly(original);
+        assertThat(service.searchByNamePrefix("las")).containsExactly(original);
+        assertThat(service.searchByPhoneNumber("1111111111"))
+            .containsExactly(original);
+
+        assertThat(service.searchByNamePrefix("oth")).isEmpty();
+        assertThat(service.searchByPhoneNumber("2222222222")).isEmpty();
+        assertThat(service.searchByNamePrefix("per")).isEmpty();
     }
 
     @ParameterizedTest
@@ -178,6 +188,16 @@ class ContactServiceTest {
         assertThat(stored.getLastName()).isEqualTo("Last");
         assertThat(stored.getPhoneNumber()).isEqualTo("1111111111");
         assertThat(stored.getAddress()).isEqualTo("123 Main Street");
+
+        //updated checks for the search
+        assertThat(service.searchByNamePrefix("fir")).containsExactly(original);
+        assertThat(service.searchByNamePrefix("las")).containsExactly(original);
+        assertThat(service.searchByPhoneNumber("1111111111"))
+            .containsExactly(original);
+
+        assertThat(service.searchByNamePrefix("upd")).isEmpty();
+        assertThat(service.searchByNamePrefix("per")).isEmpty();
+        assertThat(service.searchByPhoneNumber("2222222222")).isEmpty();
     }
 
     @Test
@@ -276,5 +296,137 @@ class ContactServiceTest {
             .isExactlyInstanceOf(ContactNotFoundException.class);
 
         assertThat(service.getAllContacts()).containsExactly(original);
+    }
+
+    @Test
+    void searchesReturnContactsSortedbyLastNameFirstNameAndId() {
+        service.addContact(
+            new Contact("4", "Jo", "Zulu", "1111111111", "4 Main Street")
+        );
+        service.addContact(
+            new Contact("3", "John", "smith", "1111111111", "3 Main Street")
+        );
+        service.addContact(
+            new Contact("2", "john", "Smith", "1111111111", "2 Main Street")
+        );
+        service.addContact(
+            new Contact("1", "Joan", "SMITH", "1111111111", "1 Main Street")
+        );
+
+        assertThat(service.searchByNamePrefix("JO"))
+            .extracting(Contact::getId)
+            .containsExactly("1", "2", "3", "4");
+
+        assertThat(service.searchByPhoneNumber("1111111111"))
+            .extracting(Contact::getId)
+            .containsExactly("1", "2", "3", "4");
+    }
+
+    @Test
+    void buildsSearchIndexesFromExistingRepositoryContacts() {
+        InMemoryContactRepository repository = new InMemoryContactRepository();
+
+        repository.save(original);
+
+        ContactService loadedService = new ContactService(repository);
+
+        assertThat(loadedService.searchByNamePrefix("fir"))
+            .containsExactly(original);
+        assertThat(loadedService.searchByNamePrefix("las"))
+            .containsExactly(original);
+        assertThat(loadedService.searchByPhoneNumber("1111111111"))
+            .containsExactly(original);
+    }
+
+    @Test
+    void updatingContactReplacesOldSearchEntries() {
+        service.addContact(original);
+
+        Contact updated = service.updateContact("1", validUpdate());
+
+        assertThat(service.searchByNamePrefix("fir")).isEmpty();
+        assertThat(service.searchByNamePrefix("las")).isEmpty();
+        assertThat(service.searchByPhoneNumber("1111111111")).isEmpty();
+
+        assertThat(service.searchByNamePrefix("upd")).containsExactly(updated);
+        assertThat(service.searchByNamePrefix("per")).containsExactly(updated);
+        assertThat(service.searchByPhoneNumber("2222222222"))
+            .containsExactly(updated);
+    }
+
+    @Test
+    void deletingContactPreservesOtherContactSearchEntries() {
+        Contact second = new Contact(
+            "2",
+            "First",
+            "Brown",
+            "1111111111",
+            "456 Oak Street"
+        );
+        service.addContact(original);
+        service.addContact(second);
+
+        service.deleteContact("1");
+
+        assertThat(service.searchByNamePrefix("las")).isEmpty();
+        assertThat(service.searchByNamePrefix("fir")).containsExactly(second);
+        assertThat(service.searchByNamePrefix("bro")).containsExactly(second);
+        assertThat(service.searchByPhoneNumber("1111111111"))
+            .containsExactly(second);
+    }
+
+    @Test
+    void updatingOneOfTwoIdenticalNamesPreservesOtherNameMatch() {
+        Contact contact = new Contact(
+            "1",
+            "John",
+            "JOHN",
+            "1111111111",
+            "123 Main Street"
+        );
+
+        service.addContact(contact);
+        Contact updated = service.updateContact(
+            "1",
+            new ContactUpdateRequest(
+                "john",
+                "Doe",
+                "1111111111",
+                "123 Main Street"
+            )
+        );
+
+        assertThat(service.searchByNamePrefix("jo")).containsExactly(updated);
+        assertThat(service.searchByNamePrefix("do")).containsExactly(updated);
+        assertThat(service.searchByPhoneNumber("1111111111"))
+            .containsExactly(updated);
+    }
+
+    @Test
+    void unmatchedSearchesReturnEmptyLists() {
+        service.addContact(original);
+
+        assertThat(service.searchByNamePrefix("zzz")).isEmpty();
+        assertThat(service.searchByPhoneNumber("9999999999")).isEmpty();
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = { " ", "\t\n" })
+    void rejectsBlankNameSearches(String prefix) {
+        assertThatThrownBy(() -> service.searchByNamePrefix(prefix))
+            .isExactlyInstanceOf(ValidationException.class);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(
+        strings = {
+            " ", "123456789", "12345678901", "123456789a", "111-111-1111",
+        }
+    )
+    void rejectsInvalidPhoneSearches(String phoneNumber) {
+        assertThatThrownBy(() -> service.searchByPhoneNumber(phoneNumber))
+            .isExactlyInstanceOf(ValidationException.class);
     }
 }
