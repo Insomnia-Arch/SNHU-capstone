@@ -8,7 +8,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.snhu.cs320.contact.Contact;
 
-public class ContactSearchIndextTest {
+public class ContactSearchIndexTest {
 
     @Test
     void findsAllContactsSharingPhoneNumber() {
