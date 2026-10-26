@@ -116,6 +116,25 @@ I added a MySQL repository through JDBC while retaining the existing service int
 | Professional self-assessment | [Professional assement.docx](https://github.com/user-attachments/files/33941018/Professional.assement.docx) |
 
 ### Acknowledgments
-
 This portfolio builds on my CS 320 coursework. Attribution for the original project's foundation is retained in the project documentation.
+
+AI Use: During the development of this project, AI was almost impossible to avoid and I had to take steps intentionally to avoid it. I had to search for solutions to many of my coding problems such as how to structure the data, or for official Java documentation. When I would search specific problems in Google for research, the AI search feature that is most often at the top of the search results would quite often be the best way for me to find sources, so therefore technically AI was used to assist in the enhancement planning by helping me find sources and documentation, finding examples of coding use throughout online such as Stack Overflow, and during the code development phase, these suggestions helped me find some examples of code with similar design patterns. During the process of developing the code, VSCode offered autocompleted sections such as a setter/getter method, and sometimes I utilized this feature, and I do not know how much of that is from an AI.  I do not have a reference for these uses because they weren't substantial enough for me to cite, as these overviews did not make my decisions, and any decisions were based solely on the actual sources they had come from. 
+
+##### No AI or LLM was responsible for the code that I wrote, its structure, my design decisions, or any of the enhancement narratives or deliverables for the Capstone.
+
+
+
+### References for codebase research and planning
+
+Parnas, D. L. (1972). On the criteria to be used in decomposing systems into modules. Communications of the ACM, 15(12), 1053–1058. https://doi.org/10.1145/361598.361623
+
+Dr. Edward Lavieri Jr. (2024). High Performance with Java : Discover Strategies and Best Practices to Develop High Performance Java Applications. Packt Publishing.
+GeeksforGeeks. (2026, September 22). Implement a phone directory. GeeksforGeeks
+
+jitron. (2015, September 24). In Java, how can I map String to a Set if I do not know how many keys in total [Online forum post]. Stack Overflow.
+
+Miroslav Wengner. (2023). Practical Design Patterns for Java Developers : Hone Your Software Design Skills by Implementing Popular Design Patterns in Java. Packt Publishing.
+
+Mock data provided by [Mockaroo.com ](https://www.mockaroo.com/) to fill the MySQL Database for testing. 
+
 [Back to top](#)
